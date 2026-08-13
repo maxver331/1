@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>🎥 Моя Медиатека</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <button class="tab-btn active" onclick="switchSection('movies', event)" data-i18n="nav_movies">Фильмы</button>
+        <button class="tab-btn" onclick="switchSection('series', event)" data-i18n="nav_series">Сериалы</button>
+        <button class="tab-btn" onclick="switchSection('favorites', event)" data-i18n="nav_favorites">⭐ Избранное</button>
+        <button class="tab-btn" onclick="switchSection('add', event)" data-i18n="nav_add">➕ Добавить</button>
+        <button class="tab-btn" onclick="switchSection('contact', event)" data-i18n="nav_contact">✉️ Контакты</button>
+        <button class="tab-btn" onclick="switchSection('settings', event)" data-i18n="nav_settings">⚙️ Настройки</button>
+        <button class="tab-btn" onclick="switchSection('account', event)" data-i18n="nav_account">👤 Аккаунт</button>
+    </nav>
+
+    <!-- Movies Section -->
+    <div id="movies-section" class="content-section active">
+        <h1 data-i18n="movies_title">Каталог фильмов</h1>
+        <div class="search-box">
+            <input type="text" id="movie-search" oninput="filterMovies()" data-i18n-placeholder="search_movie_placeholder" placeholder="🔍 Найти фильм...">
+        </div>
+        <div id="movies-grid" class="grid-container"></div>
+    </div>
+
+    <!-- Series Section -->
+    <div id="series-section" class="content-section">
+        <h1 data-i18n="series_title">Каталог сериалов</h1>
+        <div class="search-box">
+            <input type="text" id="series-search" oninput="filterSeries()" data-i18n-placeholder="search_series_placeholder" placeholder="🔍 Найти сериал...">
+        </div>
+        <div class="series-layout">
+            <div id="series-list" class="series-sidebar"></div>
+            <div class="series-content-area">
+                <div class="series-header-row">
+                    <h2 id="selected-series-title">Выберите сериал</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="favorite-series-btn" class="btn-favorite" onclick="toggleFavoriteSeries()" style="display:none;">⭐ В избранное</button>
+                        <button id="delete-series-btn" class="btn-delete" onclick="deleteCurrentSeries()" style="display:none;" data-i18n="delete_series_btn">Удалить сериал</button>
+                    </div>
+                </div>
+
+                <div id="seasons-block" style="display:none; margin-top: 20px;">
+                    <span class="selection-label" data-i18n="seasons_label">Сезоны:</span>
+                    <div id="seasons-buttons-container" class="buttons-row"></div>
+                </div>
+
+                <div id="episodes-block" style="display:none; margin-top: 20px;">
+                    <span class="selection-label" data-i18n="episodes_label">Серии:</span>
+                    <div id="episodes-buttons-container" class="buttons-row"></div>
+                </div>
+
+                <div class="video-player-wrapper" style="margin-top: 25px;">
+                    <div id="vk-player-container" class="video-box">
+                        <p class="placeholder-text" data-i18n="select_episode_prompt">Выберите серию для воспроизведения</p>
+                    </div>
+                    <button class="btn-fullscreen" onclick="makeFullscreen('vk-player-container')" data-i18n="fullscreen_btn">⛶ На полный экран</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Section -->
+    <div id="favorites-section" class="content-section">
+        <h1 data-i18n="favorites_title">Избранное аккаунта</h1>
+        <h2 data-i18n="fav_movies_heading">Избранные фильмы</h2>
+        <div id="favorite-movies-grid" class="grid-container"></div>
+        <h2 style="margin-top: 40px;" data-i18n="fav_series_heading">Избранные сериалы</h2>
+        <div id="favorite-series-grid" class="grid-container"></div>
+    </div>
+
+    <!-- Add Content Section -->
+    <div id="add-section" class="content-section">
+        <h1 data-i18n="add_title">Управление контентом</h1>
+
+        <div class="card" style="max-width: 600px; margin: 0 auto 30px auto;">
+            <h2 data-i18n="add_movie_heading">Добавить фильм</h2>
+            <div class="form-group">
+                <label data-i18n="movie_title_label">Название фильма:</label>
+                <input type="text" id="new-movie-title" data-i18n-placeholder="movie_title_placeholder" placeholder="Например: Матрица">
+            </div>
+            <div class="form-group">
+                <label data-i18n="vk_link_label">Ссылка VK Видео:</label>
+                <input type="text" id="new-movie-embed" data-i18n-placeholder="vk_link_placeholder" placeholder="Вставьте ссылку https://vkvideo.ru/...">
+            </div>
+            <button class="btn-save" onclick="addNewMovie()" data-i18n="save_movie_btn">Сохранить фильм</button>
+        </div>
+
+        <div class="card" style="max-width: 600px; margin: 0 auto;">
+            <h2 data-i18n="add_episode_heading">Добавить серии в сериал</h2>
+            <div class="form-group">
+                <label data-i18n="target_series_label">Выберите сериал или создайте новый:</label>
+                <select id="target-series-select" onchange="checkNewSeriesInput()">
+                    <option value="new" data-i18n="create_new_series_option">➕ Создать новый сериал...</option>
+                </select>
+            </div>
+            <div class="form-group" id="new-series-name-group">
+                <label data-i18n="new_series_title_label">Название нового сериала:</label>
+                <input type="text" id="new-series-title" data-i18n-placeholder="new_series_placeholder" placeholder="Например: Во все тяжкие">
+            </div>
+            <div class="form-group">
+                <label data-i18n="season_num_label">Номер сезона (только цифра, например: 1):</label>
+                <input type="text" id="new-season-title" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label data-i18n="episodes_list_label">Список серий (формат: Номер серии, Ссылка):</label>
+                <textarea id="bulk-episodes" rows="5" placeholder="1, https://vkvideo.ru/...&#10;2, https://vkvideo.ru/..."></textarea>
+            </div>
+            <button class="btn-save" onclick="addNewEpisode()" data-i18n="add_episodes_btn">Добавить серии</button>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div id="contact-section" class="content-section">
+        <h1 data-i18n="contact_title">Связь со мной</h1>
+        <div class="card" style="max-width: 600px; margin: auto;">
+            <h2 data-i18n="contact_heading">Написать мне сообщение</h2>
+            <p data-i18n="contact_desc" style="color: #6e6e73; font-size: 14px;">Заполни форму ниже, и сообщение придет на почту (через Formspree).</p>
+            <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+                <div class="form-group">
+                    <label data-i18n="email_label">Твой Email:</label>
+                    <input type="email" name="email" required placeholder="name@example.com">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="message_label">Сообщение:</label>
+                    <textarea name="message" rows="4" data-i18n-placeholder="message_placeholder" placeholder="Текст твоего сообщения..." required></textarea>
+                </div>
+                <button type="submit" class="btn-save" data-i18n="send_btn">Отправить сообщение</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Section -->
+    <div id="settings-section" class="content-section">
+        <h1 data-i18n="settings_title">Настройки</h1>
+        <div class="card" style="max-width: 600px; margin: auto;">
+            <h2 data-i18n="language_heading">Выбор языка</h2>
+            <div class="form-group">
+                <label data-i18n="language_label">Язык интерфейса:</label>
+                <select id="language-select" onchange="changeLanguage(this.value)">
+                    <option value="ru">Русский</option>
+                    <option value="be">Беларуская</option>
+                    <option value="pl">Polski</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Section -->
+    <div id="account-section" class="content-section">
+        <h1 data-i18n="account_title">Управление аккаунтом</h1>
+        <div class="card" style="max-width: 600px; margin: auto; text-align: center;">
+            <p id="current-account-info" style="font-weight: 500; margin-bottom: 20px; font-size: 16px;"></p>
+            <div class="form-group" style="text-align: left;">
+                <label data-i18n="acc_name_label">Название аккаунта:</label>
+                <input type="text" id="acc-username-input" placeholder="Логин">
+            </div>
+            <div class="form-group" style="text-align: left;">
+                <label data-i18n="acc_pass_label">Пароль аккаунта:</label>
+                <input type="password" id="acc-password-input" placeholder="Пароль">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button class="btn-save" onclick="loginOrRegisterAccount()" data-i18n="acc_submit_btn">Войти / Создать</button>
+                <button class="btn-delete" id="logout-btn" onclick="logoutAccount()" style="display:none;" data-i18n="acc_logout_btn">Выйти из аккаунта</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
