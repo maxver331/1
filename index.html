@@ -2,79 +2,96 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>🎥 Моя Медиатека</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Медиатека</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+
+    <!-- Навигация -->
     <nav>
-        <button class="tab-btn active" onclick="switchSection('movies', event)" data-i18n="nav_movies">Фильмы</button>
-        <button class="tab-btn" onclick="switchSection('series', event)" data-i18n="nav_series">Сериалы</button>
-        <button class="tab-btn" onclick="switchSection('favorites', event)" data-i18n="nav_favorites">⭐ Избранное</button>
-        <button class="tab-btn" onclick="switchSection('add', event)" data-i18n="nav_add">➕ Добавить</button>
-        <button class="tab-btn" onclick="switchSection('contact', event)" data-i18n="nav_contact">✉️ Контакты</button>
-        <button class="tab-btn" onclick="switchSection('settings', event)" data-i18n="nav_settings">⚙️ Настройки</button>
-        <button class="tab-btn" onclick="switchSection('account', event)" data-i18n="nav_account">👤 Аккаунт</button>
+        <button onclick="switchSection('movies', event)" class="active" data-i18n="nav_movies">Фильмы</button>
+        <button onclick="switchSection('series', event)" data-i18n="nav_series">Сериалы</button>
+        <button onclick="switchSection('favorites', event)" data-i18n="nav_favorites">Избранное</button>
+        <button onclick="switchSection('add', event)" data-i18n="nav_add">Добавить</button>
+        <button onclick="switchSection('contact', event)" data-i18n="nav_contact">Контакты</button>
+        <button onclick="switchSection('settings', event)" data-i18n="nav_settings">Настройки</button>
+        <button onclick="switchSection('account', event)" data-i18n="nav_account">Аккаунт</button>
     </nav>
 
-    <!-- Movies Section -->
-    <div id="movies-section" class="content-section active">
+    <!-- Секция: Фильмы -->
+    <section id="movies-section" class="content-section active">
         <h1 data-i18n="movies_title">Каталог фильмов</h1>
         <div class="search-box">
-            <input type="text" id="movie-search" oninput="filterMovies()" data-i18n-placeholder="search_movie_placeholder" placeholder="🔍 Найти фильм...">
+            <input type="text" id="movie-search" data-i18n-placeholder="search_movie_placeholder" placeholder="🔍 Найти фильм..." oninput="filterMovies()">
         </div>
-        <div id="movies-grid" class="grid-container"></div>
-    </div>
+        <div id="movies-grid" class="grid-container">
+            <!-- Динамически заполняется -->
+        </div>
+    </section>
 
-    <!-- Series Section -->
-    <div id="series-section" class="content-section">
+    <!-- Секция: Сериалы -->
+    <section id="series-section" class="content-section">
         <h1 data-i18n="series_title">Каталог сериалов</h1>
         <div class="search-box">
-            <input type="text" id="series-search" oninput="filterSeries()" data-i18n-placeholder="search_series_placeholder" placeholder="🔍 Найти сериал...">
+            <input type="text" id="series-search" data-i18n-placeholder="search_series_placeholder" placeholder="🔍 Найти сериал..." oninput="filterSeries()">
         </div>
         <div class="series-layout">
-            <div id="series-list" class="series-sidebar"></div>
+            <div class="series-sidebar" id="series-list">
+                <!-- Список сериалов -->
+            </div>
             <div class="series-content-area">
                 <div class="series-header-row">
-                    <h2 id="selected-series-title">Выберите сериал</h2>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="favorite-series-btn" class="btn-favorite" onclick="toggleFavoriteSeries()" style="display:none;">⭐ В избранное</button>
-                        <button id="delete-series-btn" class="btn-delete" onclick="deleteCurrentSeries()" style="display:none;" data-i18n="delete_series_btn">Удалить сериал</button>
+                    <div>
+                        <h2 id="selected-series-title">Выберите сериал</h2>
+                    </div>
+                    <div class="buttons-row">
+                        <button id="favorite-series-btn" class="btn-favorite" style="display:none;" onclick="toggleFavoriteSeries()">⭐ В избранное</button>
+                        <button id="delete-series-btn" class="btn-delete" style="display:none;" onclick="deleteCurrentSeries()" data-i18n="delete_series_btn">Удалить сериал</button>
                     </div>
                 </div>
 
-                <div id="seasons-block" style="display:none; margin-top: 20px;">
+                <!-- Блок сезонов -->
+                <div id="seasons-block" style="margin-top: 16px; display: none;">
                     <span class="selection-label" data-i18n="seasons_label">Сезоны:</span>
                     <div id="seasons-buttons-container" class="buttons-row"></div>
                 </div>
 
-                <div id="episodes-block" style="display:none; margin-top: 20px;">
+                <!-- Блок серий -->
+                <div id="episodes-block" style="margin-top: 16px; display: none;">
                     <span class="selection-label" data-i18n="episodes_label">Серии:</span>
                     <div id="episodes-buttons-container" class="buttons-row"></div>
                 </div>
 
-                <div class="video-player-wrapper" style="margin-top: 25px;">
-                    <div id="vk-player-container" class="video-box">
+                <!-- Плеер -->
+                <div style="margin-top: 20px;">
+                    <div class="video-box" id="vk-player-container">
                         <p class="placeholder-text" data-i18n="select_episode_prompt">Выберите серию для воспроизведения</p>
                     </div>
-                    <button class="btn-fullscreen" onclick="makeFullscreen('vk-player-container')" data-i18n="fullscreen_btn">⛶ На полный экран</button>
+                    <div style="margin-top: 10px;">
+                        <button class="btn-fullscreen" onclick="makeFullscreen('vk-player-container')" data-i18n="fullscreen_btn">⛶ На полный экран</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Favorites Section -->
-    <div id="favorites-section" class="content-section">
+    <!-- Секция: Избранное -->
+    <section id="favorites-section" class="content-section">
         <h1 data-i18n="favorites_title">Избранное аккаунта</h1>
         <h2 data-i18n="fav_movies_heading">Избранные фильмы</h2>
-        <div id="favorite-movies-grid" class="grid-container"></div>
-        <h2 style="margin-top: 40px;" data-i18n="fav_series_heading">Избранные сериалы</h2>
+        <div id="favorite-movies-grid" class="grid-container" style="margin-bottom: 30px;"></div>
+        
+        <h2 data-i18n="fav_series_heading">Избранные сериалы</h2>
         <div id="favorite-series-grid" class="grid-container"></div>
-    </div>
+    </section>
 
-    <!-- Add Content Section -->
-    <div id="add-section" class="content-section">
+    <!-- Секция: Добавить контент -->
+    <section id="add-section" class="content-section">
         <h1 data-i18n="add_title">Управление контентом</h1>
-
+        
+        <!-- Добавить фильм -->
         <div class="card" style="max-width: 600px; margin: 0 auto 30px auto;">
             <h2 data-i18n="add_movie_heading">Добавить фильм</h2>
             <div class="form-group">
@@ -88,6 +105,7 @@
             <button class="btn-save" onclick="addNewMovie()" data-i18n="save_movie_btn">Сохранить фильм</button>
         </div>
 
+        <!-- Добавить сериал / серии -->
         <div class="card" style="max-width: 600px; margin: 0 auto;">
             <h2 data-i18n="add_episode_heading">Добавить серии в сериал</h2>
             <div class="form-group">
@@ -106,68 +124,65 @@
             </div>
             <div class="form-group">
                 <label data-i18n="episodes_list_label">Список серий (формат: Номер серии, Ссылка):</label>
-                <textarea id="bulk-episodes" rows="5" placeholder="1, https://vkvideo.ru/...&#10;2, https://vkvideo.ru/..."></textarea>
+                <textarea id="bulk-episodes" rows="5" placeholder="1, https://vk.com/video_ext.php?...\n2, https://vk.com/video_ext.php?..."></textarea>
             </div>
             <button class="btn-save" onclick="addNewEpisode()" data-i18n="add_episodes_btn">Добавить серии</button>
         </div>
-    </div>
+    </section>
 
-    <!-- Contact Section -->
-    <div id="contact-section" class="content-section">
+    <!-- Секция: Контакты -->
+    <section id="contact-section" class="content-section">
         <h1 data-i18n="contact_title">Связь со мной</h1>
-        <div class="card" style="max-width: 600px; margin: auto;">
-            <h2 data-i18n="contact_heading">Написать мне сообщение</h2>
-            <p data-i18n="contact_desc" style="color: #6e6e73; font-size: 14px;">Заполни форму ниже, и сообщение придет на почту (через Formspree).</p>
-            <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <div class="card" style="max-width: 500px; margin: 0 auto; text-align: center;">
+            <p data-i18n="contact_desc">Заполни форму ниже, и сообщение придет на почту (через Formspree).</p>
+            <form action="https://formspree.io/f/xblywzrz" method="POST">
                 <div class="form-group">
                     <label data-i18n="email_label">Твой Email:</label>
-                    <input type="email" name="email" required placeholder="name@example.com">
+                    <input type="email" name="email" required placeholder="your@email.com">
                 </div>
                 <div class="form-group">
                     <label data-i18n="message_label">Сообщение:</label>
-                    <textarea name="message" rows="4" data-i18n-placeholder="message_placeholder" placeholder="Текст твоего сообщения..." required></textarea>
+                    <textarea name="message" rows="4" required data-i18n-placeholder="message_placeholder" placeholder="Текст твоего сообщения..."></textarea>
                 </div>
                 <button type="submit" class="btn-save" data-i18n="send_btn">Отправить сообщение</button>
             </form>
         </div>
-    </div>
+    </section>
 
-    <!-- Settings Section -->
-    <div id="settings-section" class="content-section">
+    <!-- Секция: Настройки -->
+    <section id="settings-section" class="content-section">
         <h1 data-i18n="settings_title">Настройки</h1>
-        <div class="card" style="max-width: 600px; margin: auto;">
+        <div class="card" style="max-width: 500px; margin: 0 auto;">
             <h2 data-i18n="language_heading">Выбор языка</h2>
             <div class="form-group">
                 <label data-i18n="language_label">Язык интерфейса:</label>
                 <select id="language-select" onchange="changeLanguage(this.value)">
                     <option value="ru">Русский</option>
+                    <option value="en">English</option>
                     <option value="be">Беларуская</option>
                     <option value="pl">Polski</option>
-                    <option value="en">English</option>
                 </select>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Account Section -->
-    <div id="account-section" class="content-section">
+    <!-- Секция: Аккаунт -->
+    <section id="account-section" class="content-section">
         <h1 data-i18n="account_title">Управление аккаунтом</h1>
-        <div class="card" style="max-width: 600px; margin: auto; text-align: center;">
-            <p id="current-account-info" style="font-weight: 500; margin-bottom: 20px; font-size: 16px;"></p>
-            <div class="form-group" style="text-align: left;">
+        <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+            <p id="current-account-info" style="margin-bottom: 20px; color: var(--gray-text);">Вы не вошли в аккаунт.</p>
+            <div class="form-group">
                 <label data-i18n="acc_name_label">Название аккаунта:</label>
-                <input type="text" id="acc-username-input" placeholder="Логин">
+                <input type="text" id="acc-username-input" placeholder="Введите имя...">
             </div>
-            <div class="form-group" style="text-align: left;">
+            <div class="form-group">
                 <label data-i18n="acc_pass_label">Пароль аккаунта:</label>
-                <input type="password" id="acc-password-input" placeholder="Пароль">
+                <input type="password" id="acc-password-input" placeholder="Введите пароль...">
             </div>
-            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                <button class="btn-save" onclick="loginOrRegisterAccount()" data-i18n="acc_submit_btn">Войти / Создать</button>
-                <button class="btn-delete" id="logout-btn" onclick="logoutAccount()" style="display:none;" data-i18n="acc_logout_btn">Выйти из аккаунта</button>
-            </div>
+            <button class="btn-save" onclick="loginOrRegisterAccount()" data-i18n="acc_submit_btn" style="width: 100%; margin-bottom: 10px;">Войти / Создать</button>
+            <button id="logout-btn" class="btn-delete" onclick="logoutAccount()" style="display: none; width: 100%;" data-i18n="acc_logout_btn">Выйти из аккаунта</button>
         </div>
-    </div>
+    </section>
 
     <script src="script.js"></script>
 </body>
