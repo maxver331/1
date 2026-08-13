@@ -303,43 +303,51 @@ input:focus, select:focus, textarea:focus {
     font-size: 14px;
 }
 
-/* --- Адаптивность для мобильных устройств --- */
-
+/* --- Мобильная версия (для телефонов) --- */
 @media (max-width: 768px) {
-    /* Общие изменения для экранов меньше 768px */
     body {
-        padding-top: 60px;
+        padding-top: 10px;
+        padding-bottom: 90px; /* Отступ снизу для панели навигации */
     }
 
-    .content-section {
-        padding: 20px 16px;
-    }
-
-    h1 {
-        font-size: 28px;
-        margin-bottom: 20px;
-    }
-
-    /* Навигация: делаем прокручиваемой по горизонтали, если кнопок много */
+    /* Панель навигации закрепляется внизу экрана в стиле мобильных приложений */
     nav {
-        justify-content: flex-start;
-        overflow-x: auto;
-        padding: 10px 16px;
-        white-space: nowrap;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    nav::-webkit-scrollbar {
-        display: none; /* Скрываем скроллбар для красоты */
+        top: auto;
+        bottom: 0;
+        position: fixed;
+        width: 100%;
+        background: rgba(16, 16, 20, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border-color);
+        border-bottom: none;
+        padding: 8px 4px;
+        justify-content: space-around;
+        z-index: 2000;
     }
 
     nav button {
-        padding: 6px 12px;
-        font-size: 13px;
-        flex-shrink: 0;
+        font-size: 11px;
+        padding: 8px 6px;
+        flex: 1;
+        text-align: center;
+        white-space: nowrap;
     }
 
-    /* Сетка карточек: на телефоне будет по 1 колонке */
+    nav button.active {
+        border-radius: 10px;
+    }
+
+    .content-section {
+        padding: 16px 12px;
+    }
+
+    h1 {
+        font-size: 26px;
+        margin-bottom: 16px;
+    }
+
+    /* Карточки на всю ширину экрана */
     .grid-container {
         grid-template-columns: 1fr;
         gap: 16px;
@@ -347,114 +355,63 @@ input:focus, select:focus, textarea:focus {
 
     .card {
         padding: 18px;
+        border-radius: 16px;
         margin: 12px 0;
     }
 
-    /* Макет сериалов: превращаем двухколоночный макет в вертикальный */
+    /* Большие, удобные для нажатия пальцем поля ввода и кнопки */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    select,
+    textarea {
+        padding: 14px 16px;
+        font-size: 16px; /* Предотвращает зум на iPhone */
+        border-radius: 12px;
+    }
+
+    .btn-save, .btn-favorite, .btn-delete, .btn-fullscreen {
+        padding: 14px 20px;
+        font-size: 15px;
+        width: 100%;
+        text-align: center;
+        border-radius: 12px;
+        margin-top: 6px;
+    }
+
+    .card-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Интерфейс сериалов под мобильный экран */
     .series-layout {
         flex-direction: column;
-        padding: 16px;
+        padding: 14px;
         gap: 16px;
     }
 
     .series-sidebar {
         width: 100%;
-        max-height: 200px; /* Ограничиваем высоту списка эпизодов на телефоне */
+        max-height: 200px;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
         padding-right: 0;
-        padding-bottom: 16px;
+        padding-bottom: 12px;
     }
 
-    .series-header-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+    .series-item {
+        padding: 12px 14px;
+        font-size: 15px;
     }
 
-    /* Кнопки действий на карточках */
-    .card-actions {
-        flex-direction: column;
+    .buttons-row {
+        gap: 8px;
     }
 
-    .card-actions button {
-        width: 100%;
-    }
-}
-/* --- Адаптивность для смартфонов и планшетов --- */
-
-@media (max-width: 768px) {
-    body {
-        padding-top: 60px;
-    }
-
-    .content-section {
-        padding: 24px 16px;
-    }
-
-    h1 {
-        font-size: 28px;
-        margin-bottom: 20px;
-    }
-
-    /* Навигация с горизонтальной прокруткой для телефонов */
-    nav {
-        justify-content: flex-start;
-        overflow-x: auto;
+    .choice-btn {
         padding: 10px 16px;
-        white-space: nowrap;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    nav::-webkit-scrollbar {
-        display: none;
-    }
-
-    nav button {
-        padding: 6px 12px;
-        font-size: 13px;
-        flex-shrink: 0;
-    }
-
-    /* Сетка карточек: одна колонка на экране телефона */
-    .grid-container {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    .card {
-        padding: 20px;
-        margin: 16px 0;
-    }
-
-    /* Вертикальное расположение блоков сериалов */
-    .series-layout {
-        flex-direction: column;
-        padding: 16px;
-        gap: 16px;
-    }
-
-    .series-sidebar {
-        width: 100%;
-        max-height: 220px;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-        padding-right: 0;
-        padding-bottom: 16px;
-    }
-
-    .series-header-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-
-    .card-actions {
-        flex-direction: column;
-    }
-
-    .card-actions button {
-        width: 100%;
+        font-size: 14px;
+        border-radius: 10px;
     }
 }
-
