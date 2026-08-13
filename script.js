@@ -1,6 +1,6 @@
 // --- Настройки облачного хранилища JSONBin ---
 const BIN_ID = '6a7dec18da38895dfee05a77';
-const API_KEY = 'ВАШ_MASTER_KEY_ЗДЕСЬ'; // Замените на ваш Master Key от JSONBin
+const API_KEY = '$2a$10$l.kHH97uW6n49bIscDhjCud6KDzGxKKWAD9p8rCSY9Hg3F10z8BAi'; // Замените на ваш Master Key от JSONBin
 
 // Базовые данные сайта
 let siteData = {
