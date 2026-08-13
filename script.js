@@ -1,3 +1,84 @@
+// --- Настройки облачного хранилища JSONBin ---
+const BIN_ID = '6a7dec18da38895dfee05a77';
+const API_KEY = 'ВАШ_MASTER_KEY_ЗДЕСЬ'; // Замените на ваш Master Key от JSONBin
+
+// Базовые данные сайта
+let siteData = {
+    movies: [
+        {
+            title: "Пример фильма",
+            vkEmbed: '<iframe src="https://vk.com/video_ext.php?oid=-200000000&id=456239000&hd=2" width="100%" height="100%" allow="autoplay; encrypted-media; fullscreen; picture-in-picture;" frameborder="0" allowfullscreen></iframe>'
+        }
+    ],
+    series: [
+        {
+            id: 1,
+            title: "Во все тяжкие",
+            seasons: {
+                "1": [
+                    { number: "1", vkEmbed: '<iframe src="https://vk.com/video_ext.php?oid=-11111&id=1111&hd=2" width="100%" height="100%" allowfullscreen></iframe>' }
+                ]
+            }
+        }
+    ]
+};
+
+let currentLang = localStorage.getItem('my_custom_lang') || 'ru';
+let currentAccount = JSON.parse(localStorage.getItem('my_active_account')) || null;
+
+// --- Функции синхронизации с облаком JSONBin ---
+async function loadDataFromCloud() {
+    try {
+        let response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+            headers: {
+                'X-Master-Key': API_KEY
+            }
+        });
+        let data = await response.json();
+        if (data && data.record) {
+            // Если в облаке есть данные, используем их
+            if (data.record.movies) siteData.movies = data.record.movies;
+            if (data.record.series) siteData.series = data.record.series;
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки из облака, используем локальные данные:', error);
+        // Резервное чтение из localStorage, если нет интернета
+        if (localStorage.getItem('my_custom_movies')) {
+            try { siteData.movies = JSON.parse(localStorage.getItem('my_custom_movies')); } catch (e) { console.error(e); }
+        }
+        if (localStorage.getItem('my_custom_series')) {
+            try { siteData.series = JSON.parse(localStorage.getItem('my_custom_series')); } catch (e) { console.error(e); }
+        }
+    }
+    // После загрузки обновляем интерфейс
+    initMovies();
+    initSeries();
+    updateFavorites();
+}
+
+async function saveDataToCloud() {
+    // Дублируем в localStorage для надежности
+    localStorage.setItem('my_custom_movies', JSON.stringify(siteData.movies));
+    localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+
+    try {
+        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_KEY
+            },
+            body: JSON.stringify({
+                movies: siteData.movies,
+                series: siteData.series
+            })
+        });
+    } catch (error) {
+        console.error('Ошибка сохранения данных в облако:', error);
+    }
+}
+
+// --- Переводы и локализация ---
 const translations = {
     ru: {
         logo: "🎥 Моя Медиатека",
@@ -313,9 +394,6 @@ const translations = {
     }
 };
 
-let currentLang = localStorage.getItem('my_custom_lang') || 'ru';
-let currentAccount = JSON.parse(localStorage.getItem('my_active_account')) || null;
-
 function t(key) {
     if (translations[currentLang] && translations[currentLang][key]) {
         return translations[currentLang][key];
@@ -346,34 +424,6 @@ function updatePageTexts() {
     updateAccountUI();
 }
 
-let siteData = {
-    movies: [
-        {
-            title: "Пример фильма",
-            vkEmbed: '<iframe src="https://vk.com/video_ext.php?oid=-200000000&id=456239000&hd=2" width="100%" height="100%" allow="autoplay; encrypted-media; fullscreen; picture-in-picture;" frameborder="0" allowfullscreen></iframe>'
-        }
-    ],
-    series: [
-        {
-            id: 1,
-            title: "Во все тяжкие",
-            seasons: {
-                "1": [
-                    { number: "1", vkEmbed: '<iframe src="https://vk.com/video_ext.php?oid=-11111&id=1111&hd=2" width="100%" height="100%" allowfullscreen></iframe>' }
-                ]
-            }
-        }
-    ]
-};
-
-if (localStorage.getItem('my_custom_movies')) {
-    try { siteData.movies = JSON.parse(localStorage.getItem('my_custom_movies')); } catch (e) { console.error(e); }
-}
-
-if (localStorage.getItem('my_custom_series')) {
-    try { siteData.series = JSON.parse(localStorage.getItem('my_custom_series')); } catch (e) { console.error(e); }
-}
-
 let activeSeries = null;
 let activeSeason = null;
 let activeEpisodeIndex = null;
@@ -402,19 +452,13 @@ function parseVkLink(inputVal) {
 function checkPassword() {
     const password = prompt(t('pass_prompt').replace(" (112113)", ""));
     if (password === null) return false;
-
     if (password === "112113") return true;
-
-    if (currentAccount && password === currentAccount.password) {
-        return true;
-    }
-
+    if (currentAccount && password === currentAccount.password) return true;
     alert(t('wrong_pass'));
     return false;
 }
 
-
-// РАБОТА С ИЗБРАННЫМ ДЛЯ АКТИВНОГО АККАУНТА
+// Работа с избранным
 function getAccountFavorites() {
     if (!currentAccount) return { movies: [], series: [] };
     let allFavs = JSON.parse(localStorage.getItem('my_account_favorites')) || {};
@@ -435,7 +479,6 @@ function toggleFavoriteMovie(movieIndex) {
     if (!currentAccount) {
         alert(t('fav_login_required'));
         switchSection('account');
-        document.querySelectorAll('.tab-btn')[document.querySelectorAll('.tab-btn').length - 1].classList.add('active');
         return;
     }
     let favs = getAccountFavorites();
@@ -455,10 +498,8 @@ function toggleFavoriteSeries() {
     if (!currentAccount) {
         alert(t('fav_login_required'));
         switchSection('account');
-        document.querySelectorAll('.tab-btn')[document.querySelectorAll('.tab-btn').length - 1].classList.add('active');
         return;
     }
-
     if (!checkPassword()) return;
 
     let favs = getAccountFavorites();
@@ -475,7 +516,6 @@ function toggleFavoriteSeries() {
 
 function removeSeriesFromFavorites(seriesId) {
     if (!currentAccount) return;
-
     if (!checkPassword()) return;
 
     let favs = getAccountFavorites();
@@ -518,9 +558,8 @@ function initFavorites() {
     }
 
     let favs = getAccountFavorites();
-
-    // Избранные фильмы с возможностью удаления
     const favMovies = favs.movies.map(i => ({ movie: siteData.movies[i], index: i })).filter(item => item.movie !== undefined);
+    
     if (favMovies.length === 0) {
         moviesGrid.innerHTML = `<p style="color: #7b7f85; grid-column: 1/-1;">${t('nothing_found')}</p>`;
     } else {
@@ -538,7 +577,6 @@ function initFavorites() {
         `).join('');
     }
 
-    // Избранные сериалы с возможностью удаления (по паролю администратора/аккаунта)
     const favSeriesList = siteData.series.filter(s => favs.series.includes(s.id));
     if (favSeriesList.length === 0) {
         seriesGrid.innerHTML = `<p style="color: #7b7f85; grid-column: 1/-1;">${t('nothing_found')}</p>`;
@@ -550,7 +588,7 @@ function initFavorites() {
                     <p style="color: #a0a0a0; font-size: 13px;">Сезонов: ${Object.keys(s.seasons).length}</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button class="btn-save" style="flex: 1;" onclick="switchSection('series'); selectSeries(${s.id}); document.querySelectorAll('.tab-btn')[1].classList.add('active');">Смотреть</button>
+                    <button class="btn-save" style="flex: 1;" onclick="switchSection('series'); selectSeries(${s.id});">Смотреть</button>
                     <button class="btn-delete" style="flex: 1;" onclick="removeSeriesFromFavorites(${s.id})">Удалить</button>
                 </div>
             </div>
@@ -558,7 +596,7 @@ function initFavorites() {
     }
 }
 
-// ЛОГИКА АККАУНТОВ
+// Аккаунты
 function updateAccountUI() {
     const infoBlock = document.getElementById('current-account-info');
     const logoutBtn = document.getElementById('logout-btn');
@@ -606,7 +644,6 @@ function loginOrRegisterAccount() {
     document.getElementById('acc-password-input').value = "";
     updateAccountUI();
     switchSection('movies');
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
     initMovies();
 }
 
@@ -614,11 +651,12 @@ function logoutAccount() {
     currentAccount = null;
     localStorage.removeItem('my_active_account');
     updateAccountUI();
-    alert(currentLang === 'en' ? "Logged out successfully" : currentLang === 'pl' ? "Wylogowano pomyślnie" : currentLang === 'be' ? "Паспяхова выйшлі" : "Вы вышли из аккаунта");
+    alert("Вы вышли из аккаунта");
     initMovies();
     initFavorites();
 }
 
+// Рендер фильмов
 function initMovies(filterText = "") {
     const grid = document.getElementById('movies-grid');
     if (!grid) return;
@@ -652,8 +690,7 @@ function initMovies(filterText = "") {
 }
 
 function filterMovies() {
-    const query = document.getElementById('movie-search').value;
-    initMovies(query);
+    initMovies(document.getElementById('movie-search').value);
 }
 
 function makeFullscreen(elementId) {
@@ -663,16 +700,16 @@ function makeFullscreen(elementId) {
     else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
 }
 
-function deleteMovie(index) {
+async function deleteMovie(index) {
     if (!checkPassword()) return;
     if (confirm(t('delete_movie_confirm'))) {
         siteData.movies.splice(index, 1);
-        localStorage.setItem('my_custom_movies', JSON.stringify(siteData.movies));
+        await saveDataToCloud();
         initMovies();
     }
 }
 
-function addNewMovie() {
+async function addNewMovie() {
     if (!checkPassword()) return;
 
     const title = document.getElementById('new-movie-title').value.trim();
@@ -680,15 +717,17 @@ function addNewMovie() {
     if (!title || !rawLink) { alert(t('fill_fields')); return; }
     let vkEmbed = parseVkLink(rawLink);
     if (!vkEmbed) { alert(t('invalid_vk')); return; }
+    
     siteData.movies.push({ title, vkEmbed });
-    localStorage.setItem('my_custom_movies', JSON.stringify(siteData.movies));
+    await saveDataToCloud();
+
     document.getElementById('new-movie-title').value = "";
     document.getElementById('new-movie-embed').value = "";
     switchSection('movies');
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
     initMovies();
 }
 
+// Рендер сериалов
 function initSeries(filterText = "") {
     const sidebar = document.getElementById('series-list');
     if (!sidebar) return;
@@ -725,8 +764,7 @@ function initSeries(filterText = "") {
 }
 
 function filterSeries() {
-    const query = document.getElementById('series-search').value;
-    initSeries(query);
+    initSeries(document.getElementById('series-search').value);
 }
 
 function selectSeries(id) {
@@ -835,16 +873,18 @@ function playVkEpisode(epIndex) {
 
 function updateSeriesDropdown() {
     const select = document.getElementById('target-series-select');
+    if (!select) return;
     select.innerHTML = `<option value="new">${t('create_new_series_option')}</option>` + siteData.series.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
     checkNewSeriesInput();
 }
 
 function checkNewSeriesInput() {
     const val = document.getElementById('target-series-select').value;
-    document.getElementById('new-series-name-group').style.display = (val === 'new') ? 'flex' : 'none';
+    const group = document.getElementById('new-series-name-group');
+    if (group) group.style.display = (val === 'new') ? 'flex' : 'none';
 }
 
-function addNewEpisode() {
+async function addNewEpisode() {
     if (!checkPassword()) return;
 
     const targetVal = document.getElementById('target-series-select').value;
@@ -876,39 +916,41 @@ function addNewEpisode() {
         }
     });
 
-    localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+    await saveDataToCloud();
+
     document.getElementById('new-season-title').value = "";
     document.getElementById('bulk-episodes').value = "";
     if (targetVal === 'new') document.getElementById('new-series-title').value = "";
+    
     initSeries();
     switchSection('series');
     alert(t('episodes_added'));
 }
 
-function deleteCurrentSeries() {
+async function deleteCurrentSeries() {
     if (!activeSeries) return;
     if (!checkPassword()) return;
     if (confirm(`${t('delete_series_confirm')} "${activeSeries.title}"?`)) {
         siteData.series = siteData.series.filter(s => s.id !== activeSeries.id);
-        localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+        await saveDataToCloud();
         activeSeries = null;
         initSeries();
     }
 }
 
-function deleteCurrentSeason() {
+async function deleteCurrentSeason() {
     if (!activeSeries || !activeSeason) return;
     if (!checkPassword()) return;
 
     let seasonDisplayLabel = isNaN(activeSeason) ? activeSeason : `${t('season_word')} ${activeSeason}`;
     if (confirm(`${t('delete_season_confirm')} "${seasonDisplayLabel}"?`)) {
         delete activeSeries.seasons[activeSeason];
-        localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+        await saveDataToCloud();
         initSeries(document.getElementById('series-search').value);
     }
 }
 
-function deleteCurrentEpisode() {
+async function deleteCurrentEpisode() {
     if (!activeSeries || !activeSeason || activeEpisodeIndex === null) return;
     if (!checkPassword()) return;
 
@@ -923,16 +965,17 @@ function deleteCurrentEpisode() {
         if (episodes.length === 0) {
             delete activeSeries.seasons[activeSeason];
         }
-        localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+        await saveDataToCloud();
         initSeries(document.getElementById('series-search').value);
     }
 }
 
-window.onload = function() {
-    document.getElementById('language-select').value = currentLang;
+// Запуск при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    const langSelect = document.getElementById('language-select');
+    if (langSelect) langSelect.value = currentLang;
+    
     updatePageTexts();
-    initMovies();
-    initSeries();
+    loadDataFromCloud(); // Загружаем данные из облака при старте
     updateAccountUI();
-    initFavorites();
-};
+});
