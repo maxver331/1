@@ -61,7 +61,7 @@ const translations = {
         nothing_found: "Ничего не найдено",
         no_seasons: "Нет сезонов",
         no_episodes: "В этом сезоне нет серий",
-        pass_prompt: "Введите пароль аккаунта для выполнения действия:",
+        pass_prompt: "Введите пароль аккаунта или администратора (112113):",
         wrong_pass: "Неверный пароль!",
         fill_fields: "Заполните оба поля!",
         invalid_vk: "Неверная ссылка VK.",
@@ -139,7 +139,7 @@ const translations = {
         nothing_found: "Нячога не знойдзена",
         no_seasons: "Няма сезонаў",
         no_episodes: "У гэтым сезоне няма серый",
-        pass_prompt: "Увядзіце пароль акаўнта для выканання дзеяння:",
+        pass_prompt: "Увядзіце пароль акаўнта або адміністратара (112113):",
         wrong_pass: "Няправільны пароль!",
         fill_fields: "Запоўніце абодва палі!",
         invalid_vk: "Няправільная спасылка VK.",
@@ -217,7 +217,7 @@ const translations = {
         nothing_found: "Nic nie znaleziono",
         no_seasons: "Brak sezonów",
         no_episodes: "Brak odcinków w tym sezonie",
-        pass_prompt: "Wpisz hasło konta, aby wykonać akcję:",
+        pass_prompt: "Wpisz hasło konta lub administratora (112113):",
         wrong_pass: "Nieprawidłowe hasło!",
         fill_fields: "Wypełnij oba pola!",
         invalid_vk: "Nieprawidłowy link VK.",
@@ -295,7 +295,7 @@ const translations = {
         nothing_found: "Nothing found",
         no_seasons: "No seasons",
         no_episodes: "No episodes in this season",
-        pass_prompt: "Enter account password to perform action:",
+        pass_prompt: "Enter account or administrator password (112113):",
         wrong_pass: "Incorrect password!",
         fill_fields: "Fill in both fields!",
         invalid_vk: "Invalid VK link.",
@@ -348,9 +348,9 @@ function updatePageTexts() {
 
 let siteData = {
     movies: [
-        { 
-            title: "Пример фильма", 
-            vkEmbed: '<iframe src="https://vk.com/video_ext.php?oid=-200000000&id=456239000&hd=2" width="100%" height="100%" allow="autoplay; encrypted-media; fullscreen; picture-in-picture;" frameborder="0" allowfullscreen></iframe>' 
+        {
+            title: "Пример фильма",
+            vkEmbed: '<iframe src="https://vk.com/video_ext.php?oid=-200000000&id=456239000&hd=2" width="100%" height="100%" allow="autoplay; encrypted-media; fullscreen; picture-in-picture;" frameborder="0" allowfullscreen></iframe>'
         }
     ],
     series: [
@@ -400,23 +400,19 @@ function parseVkLink(inputVal) {
 }
 
 function checkPassword() {
-    const password = prompt(t('pass_prompt'));
+    const password = prompt(t('pass_prompt').replace(" (112113)", ""));
     if (password === null) return false;
-    
-    if (currentAccount) {
-        if (password !== currentAccount.password) {
-            alert(t('wrong_pass'));
-            return false;
-        }
+
+    if (password === "112113") return true;
+
+    if (currentAccount && password === currentAccount.password) {
         return true;
     }
 
-    if (password !== "112113") {
-        alert(t('wrong_pass'));
-        return false;
-    }
-    return true;
+    alert(t('wrong_pass'));
+    return false;
 }
+
 
 // РАБОТА С ИЗБРАННЫМ ДЛЯ АКТИВНОГО АККАУНТА
 function getAccountFavorites() {
@@ -462,6 +458,9 @@ function toggleFavoriteSeries() {
         document.querySelectorAll('.tab-btn')[document.querySelectorAll('.tab-btn').length - 1].classList.add('active');
         return;
     }
+
+    if (!checkPassword()) return;
+
     let favs = getAccountFavorites();
     const idx = favs.series.indexOf(activeSeries.id);
     if (idx > -1) {
@@ -476,6 +475,9 @@ function toggleFavoriteSeries() {
 
 function removeSeriesFromFavorites(seriesId) {
     if (!currentAccount) return;
+
+    if (!checkPassword()) return;
+
     let favs = getAccountFavorites();
     const idx = favs.series.indexOf(seriesId);
     if (idx > -1) {
@@ -536,7 +538,7 @@ function initFavorites() {
         `).join('');
     }
 
-    // Избранные сериалы с возможностью удаления
+    // Избранные сериалы с возможностью удаления (по паролю администратора/аккаунта)
     const favSeriesList = siteData.series.filter(s => favs.series.includes(s.id));
     if (favSeriesList.length === 0) {
         seriesGrid.innerHTML = `<p style="color: #7b7f85; grid-column: 1/-1;">${t('nothing_found')}</p>`;
@@ -620,7 +622,7 @@ function logoutAccount() {
 function initMovies(filterText = "") {
     const grid = document.getElementById('movies-grid');
     if (!grid) return;
-    
+
     const filtered = siteData.movies.map((movie, index) => ({ movie, index }))
         .filter(({ movie }) => movie.title.toLowerCase().includes(filterText.toLowerCase()));
 
@@ -698,7 +700,7 @@ function initSeries(filterText = "") {
         document.getElementById('selected-series-title').innerText = t('nothing_found');
         document.getElementById('delete-series-btn').style.display = 'none';
         document.getElementById('favorite-series-btn').style.display = 'none';
-        
+
         let extraSeasonDel = document.getElementById('delete-season-btn');
         if (extraSeasonDel) extraSeasonDel.remove();
 
@@ -730,11 +732,11 @@ function filterSeries() {
 function selectSeries(id) {
     activeSeries = siteData.series.find(s => s.id === id);
     if (!activeSeries) return;
-    
+
     document.querySelectorAll('.series-item').forEach(el => el.classList.remove('active'));
     const activeItem = document.getElementById(`ser-${id}`);
     if (activeItem) activeItem.classList.add('active');
-    
+
     document.getElementById('selected-series-title').innerText = activeSeries.title;
     document.getElementById('delete-series-btn').style.display = 'block';
     updateSeriesFavoriteButton();
@@ -743,7 +745,7 @@ function selectSeries(id) {
     const seasonsBlock = document.getElementById('seasons-block');
     const seasonsContainer = document.getElementById('seasons-buttons-container');
     const episodesBlock = document.getElementById('episodes-block');
-    
+
     let seasonDelBtn = document.getElementById('delete-season-btn');
     if (!seasonDelBtn) {
         seasonDelBtn = document.createElement('button');
@@ -777,7 +779,7 @@ function selectSeries(id) {
 
 function selectSeason(seasonNum) {
     activeSeason = seasonNum;
-    
+
     document.querySelectorAll('.season-btn').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.getElementById(`seas-${seasonNum}`);
     if (activeBtn) activeBtn.classList.add('active');
@@ -824,7 +826,7 @@ function playVkEpisode(epIndex) {
 
     const playerContainer = document.getElementById('vk-player-container');
     if (!playerContainer || !activeSeason || activeSeries.seasons[activeSeason] === undefined) return;
-    
+
     const episode = activeSeries.seasons[activeSeason][epIndex];
     if (episode) {
         playerContainer.innerHTML = episode.vkEmbed;
@@ -848,7 +850,7 @@ function addNewEpisode() {
     const targetVal = document.getElementById('target-series-select').value;
     let seasonInput = document.getElementById('new-season-title').value.trim();
     const bulkText = document.getElementById('bulk-episodes').value.trim();
-    
+
     if (!seasonInput || !bulkText) { alert(t('fill_season_episodes')); return; }
 
     let targetSeries;
@@ -862,7 +864,7 @@ function addNewEpisode() {
     }
 
     if (!targetSeries.seasons[seasonInput]) targetSeries.seasons[seasonInput] = [];
-    
+
     const lines = bulkText.split('\n');
     lines.forEach(line => {
         const parts = line.split(',');
@@ -897,7 +899,7 @@ function deleteCurrentSeries() {
 function deleteCurrentSeason() {
     if (!activeSeries || !activeSeason) return;
     if (!checkPassword()) return;
-    
+
     let seasonDisplayLabel = isNaN(activeSeason) ? activeSeason : `${t('season_word')} ${activeSeason}`;
     if (confirm(`${t('delete_season_confirm')} "${seasonDisplayLabel}"?`)) {
         delete activeSeries.seasons[activeSeason];
