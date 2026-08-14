@@ -381,12 +381,22 @@ let activeEpisodeIndex = null;
 function switchSection(sectionId, event) {
     document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
     const targetSection = document.getElementById(sectionId + '-section');
     if (targetSection) targetSection.classList.add('active');
-    if (event && event.target) event.target.classList.add('active');
+    
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        const navBtn = document.querySelector(`[onclick*="switchSection('${sectionId}')"]`);
+        if (navBtn) navBtn.classList.add('active');
+    }
+
     if (sectionId === 'add') updateSeriesDropdown();
     if (sectionId === 'account') updateAccountUI();
     if (sectionId === 'favorites') initFavorites();
+    if (sectionId === 'movies') initMovies();
+    if (sectionId === 'series') initSeries();
 }
 
 function parseVkLink(inputVal) {
@@ -434,7 +444,6 @@ function toggleFavoriteMovie(movieIndex) {
     if (!currentAccount) {
         alert(t('fav_login_required'));
         switchSection('account');
-        document.querySelectorAll('.tab-btn')[document.querySelectorAll('.tab-btn').length - 1].classList.add('active');
         return;
     }
     let favs = getAccountFavorites();
@@ -454,7 +463,6 @@ function toggleFavoriteSeries() {
     if (!currentAccount) {
         alert(t('fav_login_required'));
         switchSection('account');
-        document.querySelectorAll('.tab-btn')[document.querySelectorAll('.tab-btn').length - 1].classList.add('active');
         return;
     }
     
@@ -518,7 +526,6 @@ function initFavorites() {
 
     let favs = getAccountFavorites();
 
-    // Избранные фильмы с возможностью удаления
     const favMovies = favs.movies.map(i => ({ movie: siteData.movies[i], index: i })).filter(item => item.movie !== undefined);
     if (favMovies.length === 0) {
         moviesGrid.innerHTML = `<p style="color: #7b7f85; grid-column: 1/-1;">${t('nothing_found')}</p>`;
@@ -537,7 +544,6 @@ function initFavorites() {
         `).join('');
     }
 
-    // Избранные сериалы с возможностью удаления (по паролю администратора/аккаунта)
     const favSeriesList = siteData.series.filter(s => favs.series.includes(s.id));
     if (favSeriesList.length === 0) {
         seriesGrid.innerHTML = `<p style="color: #7b7f85; grid-column: 1/-1;">${t('nothing_found')}</p>`;
@@ -549,7 +555,7 @@ function initFavorites() {
                     <p style="color: #a0a0a0; font-size: 13px;">Сезонов: ${Object.keys(s.seasons).length}</p>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button class="btn-save" style="flex: 1;" onclick="switchSection('series'); selectSeries(${s.id}); document.querySelectorAll('.tab-btn')[1].classList.add('active');">Смотреть</button>
+                    <button class="btn-save" style="flex: 1;" onclick="switchSection('series'); selectSeries(${s.id});">Смотреть</button>
                     <button class="btn-delete" style="flex: 1;" onclick="removeSeriesFromFavorites(${s.id})">Удалить</button>
                 </div>
             </div>
@@ -605,7 +611,6 @@ function loginOrRegisterAccount() {
     document.getElementById('acc-password-input').value = "";
     updateAccountUI();
     switchSection('movies');
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
     initMovies();
 }
 
@@ -684,7 +689,6 @@ function addNewMovie() {
     document.getElementById('new-movie-title').value = "";
     document.getElementById('new-movie-embed').value = "";
     switchSection('movies');
-    document.querySelectorAll('.tab-btn')[0].classList.add('active');
     initMovies();
 }
 
@@ -934,4 +938,8 @@ window.onload = function() {
     initSeries();
     updateAccountUI();
     initFavorites();
+    
+    // Активируем кнопку первой вкладки при старте
+    const firstBtn = document.querySelector('.tab-btn');
+    if (firstBtn) firstBtn.classList.add('active');
 };
