@@ -1,3 +1,8 @@
+// --- Инициализация Supabase ---
+const SUPABASE_URL = 'https://exhfwltdzoseiuqmmnqj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_IGu4LsWgFJOS_c21fLhncw_l6scNuDA';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const translations = {
     ru: {
         logo: "🎥 Моя Медиатека",
@@ -366,12 +371,58 @@ let siteData = {
     ]
 };
 
-if (localStorage.getItem('my_custom_movies')) {
-    try { siteData.movies = JSON.parse(localStorage.getItem('my_custom_movies')); } catch (e) { console.error(e); }
+// --- Функции загрузки и сохранения через Supabase ---
+async function loadFromCloud() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('app_storage')
+            .select('data')
+            .limit(1)
+            .single();
+
+        if (error) {
+            console.error('Ошибка загрузки из Supabase:', error);
+            return;
+        }
+
+        if (data && data.data) {
+            const parsed = JSON.parse(data.data);
+            if (parsed.movies) siteData.movies = parsed.movies;
+            if (parsed.series) siteData.series = parsed.series;
+        }
+    } catch (e) {
+        console.error('Ошибка парсинга облачных данных:', e);
+    }
 }
 
-if (localStorage.getItem('my_custom_series')) {
-    try { siteData.series = JSON.parse(localStorage.getItem('my_custom_series')); } catch (e) { console.error(e); }
+async function saveToCloud() {
+    try {
+        const payload = JSON.stringify({
+            movies: siteData.movies,
+            series: siteData.series
+        });
+
+        // Сначала проверяем, есть ли уже строка в таблице app_storage
+        const { data: existing } = await supabaseClient
+            .from('app_storage')
+            .select('id')
+            .limit(1);
+
+        if (existing && existing.length > 0) {
+            // Обновляем существующую первую строку
+            await supabaseClient
+                .from('app_storage')
+                .update({ data: payload })
+                .eq('id', existing[0].id);
+        } else {
+            // Если пусто, вставляем новую
+            await supabaseClient
+                .from('app_storage')
+                .insert([{ data: payload }]);
+        }
+    } catch (e) {
+        console.error('Ошибка сохранения в Supabase:', e);
+    }
 }
 
 let activeSeries = null;
@@ -412,7 +463,6 @@ function checkPassword() {
     alert(t('wrong_pass'));
     return false;
 }
-
 
 // РАБОТА С ИЗБРАННЫМ ДЛЯ АКТИВНОГО АККАУНТА
 function getAccountFavorites() {
@@ -519,7 +569,6 @@ function initFavorites() {
 
     let favs = getAccountFavorites();
 
-    // Избранные фильмы с возможностью удаления
     const favMovies = favs.movies.map(i => ({ movie: siteData.movies[i], index: i })).filter(item => item.movie !== undefined);
     if (favMovies.length === 0) {
         moviesGrid.innerHTML = `<p style="color: #7b7f85; grid-column: 1/-1;">${t('nothing_found')}</p>`;
@@ -538,7 +587,6 @@ function initFavorites() {
         `).join('');
     }
 
-    // Избранные сериалы с возможностью удаления (по паролю администратора/аккаунта)
     const favSeriesList = siteData.series.filter(s => favs.series.includes(s.id));
     if (favSeriesList.length === 0) {
         seriesGrid.innerHTML = `<p style="color: #7b7f85; grid-column: 1/-1;">${t('nothing_found')}</p>`;
@@ -663,16 +711,16 @@ function makeFullscreen(elementId) {
     else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
 }
 
-function deleteMovie(index) {
+async function deleteMovie(index) {
     if (!checkPassword()) return;
     if (confirm(t('delete_movie_confirm'))) {
         siteData.movies.splice(index, 1);
-        localStorage.setItem('my_custom_movies', JSON.stringify(siteData.movies));
+        await saveToCloud();
         initMovies();
     }
 }
 
-function addNewMovie() {
+async function addNewMovie() {
     if (!checkPassword()) return;
 
     const title = document.getElementById('new-movie-title').value.trim();
@@ -681,7 +729,9 @@ function addNewMovie() {
     let vkEmbed = parseVkLink(rawLink);
     if (!vkEmbed) { alert(t('invalid_vk')); return; }
     siteData.movies.push({ title, vkEmbed });
-    localStorage.setItem('my_custom_movies', JSON.stringify(siteData.movies));
+    
+    await saveToCloud();
+
     document.getElementById('new-movie-title').value = "";
     document.getElementById('new-movie-embed').value = "";
     switchSection('movies');
@@ -844,7 +894,7 @@ function checkNewSeriesInput() {
     document.getElementById('new-series-name-group').style.display = (val === 'new') ? 'flex' : 'none';
 }
 
-function addNewEpisode() {
+async function addNewEpisode() {
     if (!checkPassword()) return;
 
     const targetVal = document.getElementById('target-series-select').value;
@@ -876,7 +926,8 @@ function addNewEpisode() {
         }
     });
 
-    localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+    await saveToCloud();
+
     document.getElementById('new-season-title').value = "";
     document.getElementById('bulk-episodes').value = "";
     if (targetVal === 'new') document.getElementById('new-series-title').value = "";
@@ -885,30 +936,30 @@ function addNewEpisode() {
     alert(t('episodes_added'));
 }
 
-function deleteCurrentSeries() {
+async function deleteCurrentSeries() {
     if (!activeSeries) return;
     if (!checkPassword()) return;
     if (confirm(`${t('delete_series_confirm')} "${activeSeries.title}"?`)) {
         siteData.series = siteData.series.filter(s => s.id !== activeSeries.id);
-        localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+        await saveToCloud();
         activeSeries = null;
         initSeries();
     }
 }
 
-function deleteCurrentSeason() {
+async function deleteCurrentSeason() {
     if (!activeSeries || !activeSeason) return;
     if (!checkPassword()) return;
 
     let seasonDisplayLabel = isNaN(activeSeason) ? activeSeason : `${t('season_word')} ${activeSeason}`;
     if (confirm(`${t('delete_season_confirm')} "${seasonDisplayLabel}"?`)) {
         delete activeSeries.seasons[activeSeason];
-        localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+        await saveToCloud();
         initSeries(document.getElementById('series-search').value);
     }
 }
 
-function deleteCurrentEpisode() {
+async function deleteCurrentEpisode() {
     if (!activeSeries || !activeSeason || activeEpisodeIndex === null) return;
     if (!checkPassword()) return;
 
@@ -923,13 +974,17 @@ function deleteCurrentEpisode() {
         if (episodes.length === 0) {
             delete activeSeries.seasons[activeSeason];
         }
-        localStorage.setItem('my_custom_series', JSON.stringify(siteData.series));
+        await saveToCloud();
         initSeries(document.getElementById('series-search').value);
     }
 }
 
-window.onload = function() {
+window.onload = async function() {
     document.getElementById('language-select').value = currentLang;
+    
+    // Загружаем данные из облака Supabase при старте сайта
+    await loadFromCloud();
+
     updatePageTexts();
     initMovies();
     initSeries();
